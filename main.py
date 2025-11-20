@@ -39,7 +39,7 @@ val_encoded_text = encoded_text[n:]
 
 def get_batch(split):
     data = train_encoded_text if split == "train" else val_encoded_text
-    block_size = 8
+    block_size = 32
     batch_size = 4
 
     ix = torch.randint(len(data) - block_size, (batch_size,))
@@ -50,11 +50,11 @@ def get_batch(split):
 
 
 vocab_size = 65
-block_size = 8
+block_size = 32
 model = BigramLanguageModel(vocab_size, block_size)
 optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
 
-for steps in range(5000):
+for steps in range(20000):
     xb, yb = get_batch("train")
     logits, loss = model(xb, yb)
 
@@ -62,7 +62,7 @@ for steps in range(5000):
     loss.backward()
     optimizer.step()
 
-    if steps % 100 == 0:
+    if steps % 500 == 0:
         print(f"Step {steps}: loss {loss.item()}")
 
 context = torch.zeros((1, 1), dtype=torch.long)  # Start with newline character (0)
