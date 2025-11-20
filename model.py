@@ -28,7 +28,7 @@ class Head(nn.Module):
 
 
 class BigramLanguageModel(nn.Module):
-    def __init__(self, vocab_size, block_size, n_embd=32):
+    def __init__(self, vocab_size, block_size, n_embd=384):
         super().__init__()
         self.block_size = block_size
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
@@ -45,8 +45,12 @@ class BigramLanguageModel(nn.Module):
     def forward(self, idx, targets=None):
         B, T = idx.shape
 
+        # print(
+        #     f"Debug: T={T}, pos_table_size={self.position_embedding_table.num_embeddings}"
+        # )
+
         tok_emb = self.token_embedding_table(idx)
-        pos_emb = self.position_embedding_table(torch.arange(T))
+        pos_emb = self.position_embedding_table(torch.arange(T, device=idx.device))
         x = tok_emb + pos_emb
         x = tok_emb + pos_emb
         x = self.blocks(x)
@@ -64,13 +68,15 @@ class BigramLanguageModel(nn.Module):
         return logits, loss
 
     def generate(self, idx, max_new_tokens):
-        for _ in range(max_new_tokens):
+        for i in range(max_new_tokens):
+            if i % 10 == 0:  # Print every 10 tokens
+                print(f"Generating token {i}/{max_new_tokens}")
             idx_cond = idx[:, -self.block_size :]
             logits, loss = self(idx_cond)
             logits = logits[:, -1, :]
             probs = F.softmax(logits, dim=-1)
-            idx_next = torch.multinomial(probs, num_samples=1)  # (B, 1)
-            idx = torch.cat((idx, idx_next), dim=1)  # (B, T+1)
+            idx_next = torch.multinomial(probs, num_samples=1)
+            idx = torch.cat((idx, idx_next), dim=1)
         return idx
 
 
