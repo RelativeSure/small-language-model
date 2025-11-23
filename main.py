@@ -128,7 +128,7 @@ if __name__ == "__main__":
     )
 
     # Setup mixed precision training
-    scaler = torch.cuda.amp.GradScaler() if device == "cuda" else None
+    scaler = torch.amp.GradScaler('cuda') if device == "cuda" else None
     use_amp = device == "cuda"
 
     print(f"\nTraining Configuration:")
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
         # Mixed precision training
         if use_amp:
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast('cuda'):
                 logits, loss = model(xb, yb)
 
             optimizer.zero_grad(set_to_none=True)
