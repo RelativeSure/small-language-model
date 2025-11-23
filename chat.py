@@ -15,7 +15,14 @@ block_size = checkpoint["block_size"]
 
 # Create model and load weights
 model = BigramLanguageModel(vocab_size, block_size, n_embd=384)
-model.load_state_dict(checkpoint["model_state_dict"])
+
+# Handle torch.compile prefix if present
+state_dict = checkpoint["model_state_dict"]
+if any(key.startswith("_orig_mod.") for key in state_dict.keys()):
+    # Remove _orig_mod. prefix added by torch.compile
+    state_dict = {key.replace("_orig_mod.", ""): value for key, value in state_dict.items()}
+
+model.load_state_dict(state_dict)
 model.eval()
 
 # Move to GPU if available
