@@ -15,7 +15,7 @@ vocab_size = checkpoint["vocab_size"]
 block_size = checkpoint["block_size"]
 
 # Create model and load weights
-model = BigramLanguageModel(vocab_size, block_size, use_pretrained_embeddings=True)
+model = BigramLanguageModel(vocab_size, block_size, n_embd=384)
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 

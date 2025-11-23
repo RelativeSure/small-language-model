@@ -1,6 +1,5 @@
 import torch
 from datasets import load_dataset
-from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer, get_cosine_schedule_with_warmup
 import math
 
@@ -112,7 +111,8 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
 
     # Initialize model
-    model = BigramLanguageModel(vocab_size, block_size, use_pretrained_embeddings=True)
+    # Using embedding dimension of 384 (same as sentence-transformers/all-MiniLM-L6-v2)
+    model = BigramLanguageModel(vocab_size, block_size, n_embd=384)
     model = model.to(device)
 
     # Count parameters
