@@ -3,8 +3,9 @@ from transformers import AutoTokenizer
 from model import BigramLanguageModel
 
 # Load the tokenizer
-print("Loading tokenizer from sentence-transformers/all-MiniLM-L6-v2...")
-tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+print("Loading GPT-2 tokenizer...")
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+tokenizer.pad_token = tokenizer.eos_token
 
 def decode(numbers):
     return tokenizer.decode(numbers, skip_special_tokens=True)

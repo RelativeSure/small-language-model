@@ -8,9 +8,10 @@ from model import BigramLanguageModel
 # Configuration
 USE_WIKITEXT = True  # Set to False to use Shakespeare dataset
 
-# Load pre-trained tokenizer from sentence-transformers
-print("Loading tokenizer from sentence-transformers/all-MiniLM-L6-v2...")
-tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+# Load pre-trained tokenizer - GPT-2 is designed for language modeling
+print("Loading GPT-2 tokenizer...")
+tokenizer = AutoTokenizer.from_pretrained('gpt2')
+tokenizer.pad_token = tokenizer.eos_token  # GPT-2 doesn't have a pad token by default
 
 # Load dataset
 if USE_WIKITEXT:
@@ -96,14 +97,15 @@ def evaluate(model, eval_iters=100):
 
 
 if __name__ == "__main__":
-    # Hyperparameters
+    # Hyperparameters - optimized for RTX 4060 Ti 16GB
     vocab_size = tokenizer.vocab_size
     print(f"Vocab size: {vocab_size}")
     block_size = 256
-    batch_size = 128
+    batch_size = 256  # Increased for faster training (was 128)
     max_steps = 10000
     learning_rate = 3e-4
     eval_interval = 500
+    eval_iters = 50  # Reduced for faster evaluation (was 100)
     warmup_steps = 500
 
     # Setup device
@@ -111,9 +113,16 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
 
     # Initialize model
-    # Using embedding dimension of 384 (same as sentence-transformers/all-MiniLM-L6-v2)
     model = BigramLanguageModel(vocab_size, block_size, n_embd=384)
     model = model.to(device)
+
+    # Compile model for speed (PyTorch 2.0+)
+    try:
+        print("Compiling model with torch.compile for faster training...")
+        model = torch.compile(model)
+    except Exception as e:
+        print(f"torch.compile not available: {e}")
+        print("Continuing without compilation...")
 
     # Count parameters
     n_params = sum(p.numel() for p in model.parameters())
@@ -133,11 +142,14 @@ if __name__ == "__main__":
 
     print(f"\nTraining Configuration:")
     print(f"  Mixed Precision: {use_amp}")
+    print(f"  Model Compilation: {'Yes (torch.compile)' if hasattr(model, '_orig_mod') else 'No'}")
     print(f"  Warmup Steps: {warmup_steps}")
     print(f"  Max Steps: {max_steps}")
     print(f"  Learning Rate: {learning_rate}")
-    print(f"  Batch Size: {batch_size}")
-    print(f"  Block Size: {block_size}\n")
+    print(f"  Batch Size: {batch_size} (2x larger for speed)")
+    print(f"  Block Size: {block_size}")
+    print(f"  Eval Iterations: {eval_iters}")
+    print()
 
     # Training loop
     model.train()
@@ -163,7 +175,7 @@ if __name__ == "__main__":
 
         # Evaluation
         if steps % eval_interval == 0:
-            metrics = evaluate(model)
+            metrics = evaluate(model, eval_iters=eval_iters)
             lr = scheduler.get_last_lr()[0]
             print(f"Step {steps:5d} | LR: {lr:.2e} | "
                   f"Train Loss: {metrics['train_loss']:.4f} | Val Loss: {metrics['val_loss']:.4f} | "
