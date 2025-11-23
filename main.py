@@ -10,6 +10,8 @@ USE_WIKITEXT = True  # Set to False to use Shakespeare dataset
 
 # Load pre-trained tokenizer - GPT-2 is designed for language modeling
 print("Loading GPT-2 tokenizer...")
+import warnings
+warnings.filterwarnings('ignore', message='Token indices sequence length is longer than the')
 tokenizer = AutoTokenizer.from_pretrained('gpt2')
 tokenizer.pad_token = tokenizer.eos_token  # GPT-2 doesn't have a pad token by default
 
@@ -101,11 +103,11 @@ if __name__ == "__main__":
     vocab_size = tokenizer.vocab_size
     print(f"Vocab size: {vocab_size}")
     block_size = 256
-    batch_size = 256  # Increased for faster training (was 128)
+    batch_size = 64  # Reduced to fit in VRAM (GPT-2 vocab is large: 50257 tokens)
     max_steps = 10000
     learning_rate = 3e-4
     eval_interval = 500
-    eval_iters = 50  # Reduced for faster evaluation (was 100)
+    eval_iters = 50  # Reduced for faster evaluation
     warmup_steps = 500
 
     # Setup device
@@ -146,7 +148,7 @@ if __name__ == "__main__":
     print(f"  Warmup Steps: {warmup_steps}")
     print(f"  Max Steps: {max_steps}")
     print(f"  Learning Rate: {learning_rate}")
-    print(f"  Batch Size: {batch_size} (2x larger for speed)")
+    print(f"  Batch Size: {batch_size}")
     print(f"  Block Size: {block_size}")
     print(f"  Eval Iterations: {eval_iters}")
     print()
