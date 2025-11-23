@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from sentence_transformers import SentenceTransformer
 
 
 class Head(nn.Module):
@@ -28,9 +29,19 @@ class Head(nn.Module):
 
 
 class BigramLanguageModel(nn.Module):
-    def __init__(self, vocab_size, block_size, n_embd=384):
+    def __init__(self, vocab_size, block_size, n_embd=384, use_pretrained_embeddings=True):
         super().__init__()
         self.block_size = block_size
+        self.use_pretrained_embeddings = use_pretrained_embeddings
+
+        # Initialize with pre-trained embeddings from sentence-transformers
+        if use_pretrained_embeddings:
+            print("Loading pre-trained embeddings from sentence-transformers/all-MiniLM-L6-v2...")
+            self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+            # Get the embedding dimension from the pre-trained model
+            n_embd = self.embedding_model.get_sentence_embedding_dimension()
+            print(f"Using embedding dimension: {n_embd}")
+
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.lm_head = nn.Linear(n_embd, vocab_size)

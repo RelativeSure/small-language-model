@@ -1,26 +1,30 @@
 import torch
 from datasets import load_dataset
+from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
 
 from model import BigramLanguageModel
 
-dataset = load_dataset("text", data_files="data/tiny_shakespeare.txt")
+# Load pre-trained tokenizer from sentence-transformers
+print("Loading tokenizer from sentence-transformers/all-MiniLM-L6-v2...")
+tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
 
+dataset = load_dataset("text", data_files="data/tiny_shakespeare.txt")
 text = "\n".join(dataset["train"]["text"])
 
-## Tokenizer
-
-chars = sorted(set(text))
-
-char_to_idx = {char: idx for idx, char in enumerate(chars)}
-idx_to_char = {idx: char for idx, char in enumerate(chars)}
-
-
+# Use the pre-trained tokenizer
 def encode(text):
-    return [char_to_idx[char] for char in text]
+    return tokenizer.encode(text, add_special_tokens=False)
 
 
 def decode(numbers):
-    return "".join([idx_to_char[idx] for idx in numbers])
+    return tokenizer.decode(numbers, skip_special_tokens=True)
+
+
+# For backward compatibility, keep char mappings (used in generate.py)
+chars = sorted(set(text))
+char_to_idx = {char: idx for idx, char in enumerate(chars)}
+idx_to_char = {idx: char for idx, char in enumerate(chars)}
 
 
 encoded_text = encode(text)
@@ -46,9 +50,11 @@ def get_batch(split):
 
 
 if __name__ == "__main__":
-    vocab_size = 65
+    # Use the tokenizer's vocab size
+    vocab_size = tokenizer.vocab_size
+    print(f"Vocab size: {vocab_size}")
     block_size = 256
-    model = BigramLanguageModel(vocab_size, block_size)
+    model = BigramLanguageModel(vocab_size, block_size, use_pretrained_embeddings=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.to(device)
     print(f"Using device: {device}")
